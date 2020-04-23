@@ -1,4 +1,4 @@
-#! /bin/bash -x
+#! /bin/bash
 # Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
 
 set -eu
@@ -24,16 +24,15 @@ _cleanup_package_cache() {
 
 # Resolve the kernel version to the form major.minor.patch-revision.
 _resolve_kernel_version() {
+    local version=$(yum -q list available --show-duplicates kernel-headers |
+      awk -v arch=$(uname -m) 'NR>1 {print $2"."arch}' | tac | grep -E -m1 "^${KERNEL_VERSION/latest/.*}")
 
-    # local version=$(yum -q list available --show-duplicates kernel-headers |
-    #   awk -v arch=$(uname -m) 'NR>1 {print $2"."arch}' | tac | grep -E -m1 "^${KERNEL_VERSION/latest/.*}")
-
-    # echo "Resolving Linux kernel version..."
-    # if [ -z "${version}" ]; then
-    #     echo "Could not resolve Linux kernel version" >&2
-    #     return 1
-    # fi
-    KERNEL_VERSION=5.4.16 # "${version}"
+    echo "Resolving Linux kernel version..."
+    if [ -z "${version}" ]; then
+        echo "Could not resolve Linux kernel version" >&2
+        return 1
+    fi
+    KERNEL_VERSION="${version}"
     echo "Proceeding with Linux kernel version ${KERNEL_VERSION}"
     return 0
 }
@@ -48,54 +47,37 @@ _install_prerequisites() (
     rm -rf /lib/modules/${KERNEL_VERSION}
     mkdir -p /lib/modules/${KERNEL_VERSION}/proc
 
-    # echo "Installing Linux kernel headers..."
-    # yum -q -y install kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
-    # ln -s /usr/src/kernels/${KERNEL_VERSION} /lib/modules/${KERNEL_VERSION}/build
+    echo "Installing Linux kernel headers..."
+    yum -q -y install kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
+    ln -s /usr/src/kernels/${KERNEL_VERSION} /lib/modules/${KERNEL_VERSION}/build
 
-    # echo "Installing Linux kernel module files..."
-    # yum install -y -q kernel-${KERNEL_VERSION} --downloadonly --downloaddir=$(pwd)
-    # cat ./kernel*.rpm | rpm2cpio | cpio -idm --quiet
-    # rm ./*.rpm
-
-    # mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
-    # mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
+    echo "Installing Linux kernel module files..."
+    curl -fsSL $(repoquery --location kernel-${KERNEL_VERSION}) | rpm2cpio | cpio -idm --quiet
+    mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
+    mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
     depmod ${KERNEL_VERSION}
 
     echo "Generating Linux kernel version string..."
-    # extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
-    echo $KERNEL_VERSION > version
+    extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
     if [ -z "$(<version)" ]; then
         echo "Could not locate Linux kernel version string" >&2
         return 1
     fi
     mv version /lib/modules/${KERNEL_VERSION}/proc
-
-    # Parse gcc version
-    # gcc_version is expected to match x.y.z
-    # current_gcc is expected to match 'gcc-x.y.z-rel.el8.x86_64
-    local gcc_version=$(cat /lib/modules/${KERNEL_VERSION}/proc/version | grep -Eo "gcc version ([0-9\.]+)" | grep -Eo "([0-9\.]+)")
-    local current_gcc=$(rpm -qa gcc)
-    echo "kernel requires gcc version: 'gcc-${gcc_version}', current gcc version is '${current_gcc}'"
-
-    if [[ "gcc-${gcc_version}" != "${current_gcc}"* ]]; then
-        yum install -q -y "gcc-${gcc_version}"
-    fi
 )
 
 # Cleanup the prerequisites installed above.
 _remove_prerequisites() {
-    true
-    #if [ "${PACKAGE_TAG:-}" != "builtin" ]; then
-        # yum -q -y remove kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
+    if [ "${PACKAGE_TAG:-}" != "builtin" ]; then
+        yum -q -y remove kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
         # TODO remove module files not matching an existing driver package.
-    #fi
+    fi
 }
 
 # Check if the kernel version requires a new precompiled driver packages.
 _kernel_requires_package() {
     local proc_mount_arg=""
 
-    [[ ! -d /usr/src/nvidia-${DRIVER_VERSION}/kernel ]] && return 0
     echo "Checking NVIDIA driver packages..."
     cd /usr/src/nvidia-${DRIVER_VERSION}/kernel
 
@@ -104,7 +86,7 @@ _kernel_requires_package() {
     proc_mount_arg="--proc-mount-point /lib/modules/${KERNEL_VERSION}/proc"
     #fi
     for pkg_name in $(ls -d -1 precompiled/** 2> /dev/null); do
-        is_match=$(../mkprecompiled --match ${pkg_name} ${proc_mount_arg})
+	is_match=$(../mkprecompiled --match ${pkg_name} ${proc_mount_arg})
         if [ "${is_match}" == "kernel interface matches." ]; then
             echo "Found NVIDIA driver package ${pkg_name##*/}"
             return 1
@@ -237,7 +219,7 @@ _install_driver() {
     if [ "${ACCEPT_LICENSE}" = "yes" ]; then
         install_args+=("--accept-license")
     fi
-    IGNORE_CC_MISMATCH=1 nvidia-installer --kernel-module-only --no-drm --ui=none --no-nouveau-check ${install_args[@]+"${install_args[@]}"}
+    nvidia-installer --kernel-module-only --no-drm --ui=none --no-nouveau-check ${install_args[@]+"${install_args[@]}"}
     # May need to add no-cc-check for Rhel, otherwise it complains about cc missing in path
     # /proc/version and lib/modules/KERNEL_VERSION/proc are different, by default installer looks at /proc/ so, added the proc-mount-point
     # TODO: remove the -a flag. its not needed. in the new driver version, license-acceptance is implicit
