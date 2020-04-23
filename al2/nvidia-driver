@@ -24,15 +24,16 @@ _cleanup_package_cache() {
 
 # Resolve the kernel version to the form major.minor.patch-revision.
 _resolve_kernel_version() {
-    local version=$(yum -q list available --show-duplicates kernel-headers |
-      awk -v arch=$(uname -m) 'NR>1 {print $2"."arch}' | tac | grep -E -m1 "^${KERNEL_VERSION/latest/.*}")
 
-    echo "Resolving Linux kernel version..."
-    if [ -z "${version}" ]; then
-        echo "Could not resolve Linux kernel version" >&2
-        return 1
-    fi
-    KERNEL_VERSION="${version}"
+    # local version=$(yum -q list available --show-duplicates kernel-headers |
+    #   awk -v arch=$(uname -m) 'NR>1 {print $2"."arch}' | tac | grep -E -m1 "^${KERNEL_VERSION/latest/.*}")
+
+    # echo "Resolving Linux kernel version..."
+    # if [ -z "${version}" ]; then
+    #     echo "Could not resolve Linux kernel version" >&2
+    #     return 1
+    # fi
+    KERNEL_VERSION=5.4.16-0 # "${version}"
     echo "Proceeding with Linux kernel version ${KERNEL_VERSION}"
     return 0
 }
