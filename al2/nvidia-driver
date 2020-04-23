@@ -33,7 +33,7 @@ _resolve_kernel_version() {
     #     echo "Could not resolve Linux kernel version" >&2
     #     return 1
     # fi
-    KERNEL_VERSION=5.4.16-0 # "${version}"
+    KERNEL_VERSION=5.4.16 # "${version}"
     echo "Proceeding with Linux kernel version ${KERNEL_VERSION}"
     return 0
 }
@@ -48,21 +48,22 @@ _install_prerequisites() (
     rm -rf /lib/modules/${KERNEL_VERSION}
     mkdir -p /lib/modules/${KERNEL_VERSION}/proc
 
-    echo "Installing Linux kernel headers..."
-    yum -q -y install kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
-    ln -s /usr/src/kernels/${KERNEL_VERSION} /lib/modules/${KERNEL_VERSION}/build
+    # echo "Installing Linux kernel headers..."
+    # yum -q -y install kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
+    # ln -s /usr/src/kernels/${KERNEL_VERSION} /lib/modules/${KERNEL_VERSION}/build
 
-    echo "Installing Linux kernel module files..."
-    yum install -y -q kernel-${KERNEL_VERSION} --downloadonly --downloaddir=$(pwd)
-    cat ./kernel*.rpm | rpm2cpio | cpio -idm --quiet
-    rm ./*.rpm
+    # echo "Installing Linux kernel module files..."
+    # yum install -y -q kernel-${KERNEL_VERSION} --downloadonly --downloaddir=$(pwd)
+    # cat ./kernel*.rpm | rpm2cpio | cpio -idm --quiet
+    # rm ./*.rpm
 
-    mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
-    mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
+    # mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
+    # mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
     depmod ${KERNEL_VERSION}
 
     echo "Generating Linux kernel version string..."
-    extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
+    # extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
+    echo $KERNEL_VERSION > version
     if [ -z "$(<version)" ]; then
         echo "Could not locate Linux kernel version string" >&2
         return 1
