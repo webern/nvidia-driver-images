@@ -4,7 +4,13 @@ RUN yum install -y \
         ca-certificates \
         curl \
         gcc \
+        elfutils-libelf-devel \
         glibc.i686 \
+        cpio \
+        tar \
+        util-linux \
+        pkg-config \
+        libglvnd-devel \
         make \
         kmod && \
     rm -rf /var/cache/yum/*
@@ -53,10 +59,10 @@ ARG PRIVATE_KEY
 ARG KERNEL_VERSION=latest
 
 # Compile the kernel modules and generate precompiled packages for use by the nvidia-installer.
-RUN yum makecache -y && \
-    for version in $(echo $KERNEL_VERSION | tr ',' ' '); do \
-        nvidia-driver update -k $version -t builtin ${PRIVATE_KEY:+"-s ${PRIVATE_KEY}"}; \
-    done && \
-    rm -rf /var/cache/yum/*
+# RUN yum makecache -y && \
+#     for version in $(echo $KERNEL_VERSION | tr ',' ' '); do \
+#         nvidia-driver update -k $version -t builtin ${PRIVATE_KEY:+"-s ${PRIVATE_KEY}"}; \
+#     done && \
+#     rm -rf /var/cache/yum/*
 
 ENTRYPOINT ["nvidia-driver", "init"]

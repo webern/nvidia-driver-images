@@ -24,54 +24,59 @@ _cleanup_package_cache() {
 
 # Resolve the kernel version to the form major.minor.patch-revision.
 _resolve_kernel_version() {
-    local version=$(yum -q list available --show-duplicates kernel-headers |
-      awk -v arch=$(uname -m) 'NR>1 {print $2"."arch}' | tac | grep -E -m1 "^${KERNEL_VERSION/latest/.*}")
+    # local version=$(yum -q list available --show-duplicates kernel-headers |
+    #   awk -v arch=$(uname -m) 'NR>1 {print $2"."arch}' | tac | grep -E -m1 "^${KERNEL_VERSION/latest/.*}")
 
-    echo "Resolving Linux kernel version..."
-    if [ -z "${version}" ]; then
-        echo "Could not resolve Linux kernel version" >&2
-        return 1
-    fi
-    KERNEL_VERSION="${version}"
+    # echo "Resolving Linux kernel version..."
+    # if [ -z "${version}" ]; then
+    #     echo "Could not resolve Linux kernel version" >&2
+    #     return 1
+    # fi
+    KERNEL_VERSION="5.16.4"
     echo "Proceeding with Linux kernel version ${KERNEL_VERSION}"
     return 0
 }
 
 # Install the kernel modules header/builtin/order files and generate the kernel version string.
 _install_prerequisites() (
-    local tmp_dir=$(mktemp -d)
+    # local tmp_dir=$(mktemp -d)
 
-    trap "rm -rf ${tmp_dir}" EXIT
-    cd ${tmp_dir}
+    # trap "rm -rf ${tmp_dir}" EXIT
+    # cd ${tmp_dir}
 
+    # rm -rf /lib/modules/${KERNEL_VERSION}
+    # mkdir -p /lib/modules/${KERNEL_VERSION}/proc
+
+    # echo "Installing Linux kernel headers..."
+    # yum -q -y install kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
+    # ln -s /usr/src/kernels/${KERNEL_VERSION} /lib/modules/${KERNEL_VERSION}/build
+
+    # echo "Installing Linux kernel module files..."
+    # curl -fsSL $(repoquery --location kernel-${KERNEL_VERSION}) | rpm2cpio | cpio -idm --quiet
+    # mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
+    # mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
+    # depmod ${KERNEL_VERSION}
+
+    # echo "Generating Linux kernel version string..."
+    # extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
+    # if [ -z "$(<version)" ]; then
+    #     echo "Could not locate Linux kernel version string" >&2
+    #     return 1
+    # fi
+    # mv version /lib/modules/${KERNEL_VERSION}/proc
     rm -rf /lib/modules/${KERNEL_VERSION}
+    mkdir -p /lib/modules/${KERNEL_VERSION}
+    cp -a /readonly/lib/modules/${KERNEL_VERSION} /lib/modules/${KERNEL_VERSION}
     mkdir -p /lib/modules/${KERNEL_VERSION}/proc
-
-    echo "Installing Linux kernel headers..."
-    yum -q -y install kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
-    ln -s /usr/src/kernels/${KERNEL_VERSION} /lib/modules/${KERNEL_VERSION}/build
-
-    echo "Installing Linux kernel module files..."
-    curl -fsSL $(repoquery --location kernel-${KERNEL_VERSION}) | rpm2cpio | cpio -idm --quiet
-    mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
-    mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
-    depmod ${KERNEL_VERSION}
-
-    echo "Generating Linux kernel version string..."
-    extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
-    if [ -z "$(<version)" ]; then
-        echo "Could not locate Linux kernel version string" >&2
-        return 1
-    fi
-    mv version /lib/modules/${KERNEL_VERSION}/proc
+    echo ${KERNEL_VERSION} > /lib/modules/${KERNEL_VERSION}/proc/version
 )
 
 # Cleanup the prerequisites installed above.
 _remove_prerequisites() {
-    if [ "${PACKAGE_TAG:-}" != "builtin" ]; then
-        yum -q -y remove kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
-        # TODO remove module files not matching an existing driver package.
-    fi
+    # if [ "${PACKAGE_TAG:-}" != "builtin" ]; then
+    #     yum -q -y remove kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
+    #     # TODO remove module files not matching an existing driver package.
+    # fi
 }
 
 # Check if the kernel version requires a new precompiled driver packages.
