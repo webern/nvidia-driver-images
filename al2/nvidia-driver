@@ -32,7 +32,7 @@ _resolve_kernel_version() {
     #     echo "Could not resolve Linux kernel version" >&2
     #     return 1
     # fi
-    KERNEL_VERSION="5.16.4"
+    KERNEL_VERSION="$(uname -r)"
     echo "Proceeding with Linux kernel version ${KERNEL_VERSION}"
     return 0
 }
@@ -53,7 +53,7 @@ _install_prerequisites() (
 
     # echo "Installing Linux kernel module files..."
     # curl -fsSL $(repoquery --location kernel-${KERNEL_VERSION}) | rpm2cpio | cpio -idm --quiet
-    cp -a "/readonly/lib/modules/${KERNEL_VERSION}/" "/lib/modules/${KERNEL_VERSION}/"
+    cp -a "/readonly/lib/modules/" "/lib/modules/${KERNEL_VERSION}/"
     mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
     mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
     depmod ${KERNEL_VERSION}
