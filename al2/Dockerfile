@@ -1,17 +1,19 @@
-FROM centos:7
+FROM fedora:30
 
-RUN yum install -y \
+RUN yum --setopt=skip_missing_names_on_install=False install -y \
         ca-certificates \
         curl \
+        libmpc-devel \
         gcc \
         elfutils-libelf-devel \
         glibc.i686 \
         cpio \
         tar \
         util-linux \
-        pkg-config \
         libglvnd-devel \
         make \
+        findutils \
+        xargs \
         kmod && \
     rm -rf /var/cache/yum/*
 
@@ -28,7 +30,7 @@ ENV DRIVER_VERSION=$DRIVER_VERSION
 RUN cd /tmp && \
     curl -fSsl -O $BASE_URL/$DRIVER_VERSION/NVIDIA-Linux-x86_64-$DRIVER_VERSION.run && \
     sh NVIDIA-Linux-x86_64-$DRIVER_VERSION.run -x && \
-    cd NVIDIA-Linux-x86_64-$DRIVER_VERSION* && \
+    cd NVIDIA-Linux-x86_64-$DRIVER_VERSION && \
     ./nvidia-installer --silent \
                        --no-kernel-module \
                        --install-compat32-libs \
