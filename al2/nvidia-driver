@@ -53,7 +53,7 @@ _install_prerequisites() (
 
     # echo "Installing Linux kernel module files..."
     # curl -fsSL $(repoquery --location kernel-${KERNEL_VERSION}) | rpm2cpio | cpio -idm --quiet
-    cp -a "/readonly/lib/modules/" "/lib/modules/${KERNEL_VERSION}/"
+    cp -a "/readonly/lib/modules/${KERNEL_VERSION}/" "/lib/modules/${KERNEL_VERSION}/"
     mv lib/modules/${KERNEL_VERSION}/modules.* /lib/modules/${KERNEL_VERSION}
     mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
     depmod ${KERNEL_VERSION}
