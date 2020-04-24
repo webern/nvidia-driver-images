@@ -58,12 +58,14 @@ _install_prerequisites() (
     # mv lib/modules/${KERNEL_VERSION}/kernel /lib/modules/${KERNEL_VERSION}
     depmod ${KERNEL_VERSION}
 
-    echo "Generating Linux kernel version string..."
-    extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
-    if [ -z "$(<version)" ]; then
-        echo "Could not locate Linux kernel version string" >&2
-        return 1
-    fi
+    # i don't understand what this is trying to do, is this going to be different than "$(uname -r)"?
+    # echo "Generating Linux kernel version string..."
+    # extract-vmlinux boot/vmlinuz-${KERNEL_VERSION} | strings | grep -E '^Linux version' | sed 's/^\(.*\)\s\+(.*)$/\1/' > version
+    # if [ -z "$(<version)" ]; then
+    #     echo "Could not locate Linux kernel version string" >&2
+    #     return 1
+    # fi
+    echo "${KERNEL_VERSION}" > version
     mv version /lib/modules/${KERNEL_VERSION}/proc
 )
 
