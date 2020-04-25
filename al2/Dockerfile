@@ -13,7 +13,6 @@ RUN yum --setopt=skip_missing_names_on_install=False install -y \
         libglvnd-devel \
         make \
         findutils \
-        xargs \
         kmod && \
     rm -rf /var/cache/yum/*
 
